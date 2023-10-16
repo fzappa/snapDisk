@@ -1,0 +1,63 @@
+#!/bin/bash
+# snapDisk - ZFS Snapshot Management Script
+# Alan Franco
+# https://github.com/fzappa/snapDisk
+#
+#
+# First version date: 2023/10/16
+# Last update date:  2023/10/16
+
+# Function to create a snapshot
+create_snapshot() {
+  local dataset="$1"
+  local snapshot_name="$(date '+%Y-%m-%d_%H:%M:%S')"
+  sudo zfs snapshot "$dataset@$snapshot_name"
+  echo "Snapshot created: $dataset@$snapshot_name"
+}
+
+# Function to list snapshots with numbers
+list_snapshots() {
+  local snapshots=( $(sudo zfs list -t snapshot -o name -H -S creation) )
+  for ((i = 0; i < ${#snapshots[@]}; i++)); do
+    echo "$i. ${snapshots[i]}"
+  done
+}
+
+# Function to remove snapshots
+remove_snapshots() {
+  read -p "Enter the numbers of the snapshots to remove (separated by space): " to_remove
+  local snapshots=( $(sudo zfs list -t snapshot -o name -H -S creation) )
+  for num in $to_remove; do
+    if [[ $num =~ ^[0-9]+$ ]] && [ $num -ge 0 ] && [ $num -lt ${#snapshots[@]} ]; then
+      local snapshot="${snapshots[num]}"
+      sudo zfs destroy "$snapshot"
+      echo "Snapshot removed: $snapshot"
+    else
+      echo "Invalid number: $num. Skipping."
+    fi
+  done
+}
+
+# Menu options
+echo "Choose an option:"
+echo "1. Create a snapshot"
+echo "2. List and remove snapshots"
+read -p "Option: " option
+
+case "$option" in
+  1)
+    echo "Available datasets:"
+    # List available datasets
+    sudo zfs list -o name -H
+    read -p "Enter the dataset name to create a snapshot: " dataset
+    create_snapshot "$dataset"
+    ;;
+  2)
+    echo "Available snapshots:"
+    list_snapshots
+    remove_snapshots
+    ;;
+  *)
+    echo "Invalid option. Exiting."
+    ;;
+esac
