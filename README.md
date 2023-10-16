@@ -14,11 +14,11 @@ This is a Bash script for managing ZFS snapshots. It allows you to create and re
 2. Make the script executable:
 
    ```bash
-   chmod +x zfs-snapshot.sh
+   chmod +x snapDisk
    ```
 
 ```sh
-./zfs-snapshot.sh
+./snapDisk
 Choose an option:
 1. Create a snapshot
 2. List and remove snapshots
@@ -32,7 +32,7 @@ Snapshot created: rpool/USERDATA@2023-10-10_22:49:18
 ```
 
 ```sh
-./zfs-snapshot.sh
+./snapDisk
 Choose an option:
 1. Create a snapshot
 2. List and remove snapshots
