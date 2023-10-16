@@ -9,7 +9,17 @@
 
 # Function to create a snapshot
 create_snapshot() {
-  local dataset="$1"
+  echo "Available datasets:"
+  # List available datasets
+  sudo zfs list -o name -H
+  read -p "Enter the dataset name to create a snapshot: " dataset
+
+  # Check if dataset input is empty
+  if [ -z "$dataset" ]; then
+    echo "Error: Dataset not recognized."
+    exit 1
+  fi
+  
   local snapshot_name="$(date '+%Y-%m-%d_%H:%M:%S')"
   sudo zfs snapshot "$dataset@$snapshot_name"
   echo "Snapshot created: $dataset@$snapshot_name"
@@ -25,9 +35,8 @@ list_snapshots() {
 
 # Function to remove snapshots
 remove_snapshots() {
-  read -p "Enter the numbers of the snapshots to remove (separated by space): " to_remove
   local snapshots=( $(sudo zfs list -t snapshot -o name -H -S creation) )
-  for num in $to_remove; do
+  for num in "$@"; do
     if [[ $num =~ ^[0-9]+$ ]] && [ $num -ge 0 ] && [ $num -lt ${#snapshots[@]} ]; then
       local snapshot="${snapshots[num]}"
       sudo zfs destroy "$snapshot"
@@ -38,26 +47,42 @@ remove_snapshots() {
   done
 }
 
-# Menu options
-echo "Choose an option:"
-echo "1. Create a snapshot"
-echo "2. List and remove snapshots"
-read -p "Option: " option
 
-case "$option" in
-  1)
-    echo "Available datasets:"
-    # List available datasets
-    sudo zfs list -o name -H
-    read -p "Enter the dataset name to create a snapshot: " dataset
-    create_snapshot "$dataset"
-    ;;
-  2)
-    echo "Available snapshots:"
-    list_snapshots
-    remove_snapshots
-    ;;
-  *)
-    echo "Invalid option. Exiting."
-    ;;
-esac
+help(){
+    echo "Usage:"
+    echo "$(basename $0) -l or --list       : List snapshots"
+    echo "$(basename $0) -c or --create     : Create snapshot"
+    echo "$(basename $0) -r or --remove 0 1 : Remove snapshots"
+    exit 1
+}
+
+# Command-line argument parsing
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    -l|--list)
+      list_snapshots
+      exit 0
+      ;;
+    -c|--create)
+      create_snapshot
+      exit 0
+      ;;
+    -r|--remove)
+      shift # remove the -r or --remove argument
+      if [ "$#" -eq 0 ]; then
+        echo "Error: No snapshot numbers provided for removal."
+        echo "Usage: $(basename $0) -r or --remove followed by snapshot numbers (e.g., 0 1)"
+        exit 1
+      fi
+      remove_snapshots "$@"
+      exit 0
+      ;;
+    *)
+      echo "Invalid option: $1"
+      help
+      ;;
+  esac
+  shift
+done
+
+help
