@@ -5,15 +5,12 @@
 #
 #
 # First version date: 2023/10/16
-# Last update date:  2023/10/16
+# Last update date:  2023/10/20
 
 # Function to create a snapshot
 create_snapshot() {
-  echo "Available datasets:"
-  # List available datasets
-  sudo zfs list -o name -H
-  read -p "Enter the dataset name to create a snapshot: " dataset
-
+  local dataset="$1"
+  
   # Check if dataset input is empty
   if [ -z "$dataset" ]; then
     echo "Error: Dataset not recognized."
@@ -23,6 +20,12 @@ create_snapshot() {
   local snapshot_name="$(date '+%Y-%m-%d_%H:%M:%S')"
   sudo zfs snapshot "$dataset@$snapshot_name"
   echo "Snapshot created: $dataset@$snapshot_name"
+}
+
+# Function to list available datasets
+list_datasets() {
+  echo "Available datasets:"
+  sudo zfs list -o name -H
 }
 
 # Function to list snapshots with numbers
@@ -47,11 +50,11 @@ remove_snapshots() {
   done
 }
 
-
 help(){
     echo "Usage:"
     echo "$(basename $0) -l or --list       : List snapshots"
-    echo "$(basename $0) -c or --create     : Create snapshot"
+    echo "$(basename $0) -c or --create [dataset] : Create snapshot for given dataset"
+    echo "$(basename $0) -ld or --listdatasets : List available datasets"
     echo "$(basename $0) -r or --remove 0 1 : Remove snapshots"
     exit 1
 }
@@ -64,7 +67,12 @@ while [[ "$#" -gt 0 ]]; do
       exit 0
       ;;
     -c|--create)
-      create_snapshot
+      shift # remove the -c or --create argument
+      create_snapshot "$1"
+      exit 0
+      ;;
+    -ld|--listdatasets)
+      list_datasets
       exit 0
       ;;
     -r|--remove)
